@@ -1,0 +1,106 @@
+# =============================================================================
+# Blu3scr33n - Music  ·  ACE-Step 1.5
+# docker compose up -d          →  http://localhost:3297
+# docker compose up -d --build  →  rebuild image first
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # app — unified FastAPI + Studio UI server
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: blu3scr33n-music:latest
+    container_name: blu3scr33n_music
+
+    restart: unless-stopped
+
+    # GPU access (requires nvidia-container-toolkit)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+
+    ports:
+      - "${HOST_PORT:-3297}:${ACESTEP_API_PORT:-3297}"
+
+    # Persistent volumes -------------------------------------------------------
+    volumes:
+      # Model checkpoints — survives container rebuild
+      - checkpoints:/app/checkpoints
+      # HuggingFace / ModelScope cache
+      - hf_cache:/app/.cache/huggingface
+      # Compiled Triton / Inductor kernels (warm up once, reuse forever)
+      - triton_cache:/app/.cache/triton
+      - inductor_cache:/app/.cache/torchinductor
+      # Temp inference files
+      - tmp_cache:/app/.cache/tmp
+      # Generated audio outputs (optional — remove if you stream everything)
+      - outputs:/app/outputs
+
+    # Environment — these are the defaults; override via .env at project root --
+    environment:
+      # ── Model ──────────────────────────────────────────────────────────────
+      ACESTEP_CONFIG_PATH:      ${ACESTEP_CONFIG_PATH:-acestep-v15-turbo}
+      ACESTEP_LM_MODEL_PATH:    ${ACESTEP_LM_MODEL_PATH:-acestep-5Hz-lm-0.6B}
+      ACESTEP_INIT_LLM:         ${ACESTEP_INIT_LLM:-auto}
+      ACESTEP_DEVICE:           ${ACESTEP_DEVICE:-auto}
+      ACESTEP_LM_BACKEND:       ${ACESTEP_LM_BACKEND:-pt}
+      ACESTEP_NO_INIT:          ${ACESTEP_NO_INIT:-false}
+      ACESTEP_DOWNLOAD_SOURCE:  ${ACESTEP_DOWNLOAD_SOURCE:-auto}
+
+      # ── Server ─────────────────────────────────────────────────────────────
+      ACESTEP_API_HOST:         0.0.0.0
+      ACESTEP_API_PORT:         ${ACESTEP_API_PORT:-3297}
+      ACESTEP_QUEUE_MAXSIZE:    ${ACESTEP_QUEUE_MAXSIZE:-100}
+      ACESTEP_QUEUE_WORKERS:    ${ACESTEP_QUEUE_WORKERS:-1}
+
+      # ── Auth (leave empty to disable) ──────────────────────────────────────
+      ACESTEP_API_KEY:          ${ACESTEP_API_KEY:-}
+
+      # ── Cache paths (mapped to volumes above) ─────────────────────────────
+      HF_HOME:                  /app/.cache/huggingface
+      TORCH_HOME:               /app/.cache/torch
+      TRITON_CACHE_DIR:         /app/.cache/triton
+      TORCHINDUCTOR_CACHE_DIR:  /app/.cache/torchinductor
+      ACESTEP_TMPDIR:           /app/.cache/tmp
+
+    # The healthcheck is defined in the Dockerfile; compose surfaces it here ---
+    healthcheck:
+      test: [ "CMD-SHELL",
+              "curl -sf http://localhost:${ACESTEP_API_PORT:-3297}/health | python3 -c \"import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('data',{}).get('status')=='ok' else 1)\"" ]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+      start_period: 120s
+
+    # Logging ------------------------------------------------------------------
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+# =============================================================================
+# Named volumes — Docker manages the lifecycle
+# =============================================================================
+volumes:
+  checkpoints:
+    name: blu3scr33n_checkpoints
+  hf_cache:
+    name: blu3scr33n_hf_cache
+  triton_cache:
+    name: blu3scr33n_triton_cache
+  inductor_cache:
+    name: blu3scr33n_inductor_cache
+  tmp_cache:
+    name: blu3scr33n_tmp_cache
+  outputs:
+    name: blu3scr33n_outputs

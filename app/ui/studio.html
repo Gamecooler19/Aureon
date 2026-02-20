@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aureon - Blu3scr33n</title>
+
+    <!-- WaveSurfer.js -->
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        accent:  { DEFAULT: '#1DB954', hover: '#1ed760', dim: 'rgba(29,185,84,0.15)' },
+                        surface: { DEFAULT: '#141414', elevated: '#1a1a1a', input: '#242424' },
+                        border:  { DEFAULT: '#2e2e2e' },
+                        gold:    '#FFD700',
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system','BlinkMacSystemFont','"Segoe UI"','Roboto','Helvetica','Arial','sans-serif'],
+                        mono: ['"Courier New"','Courier','monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body { background-color: #080808; color: #fff; }
+        input[type="range"]    { accent-color: #1DB954; }
+        input[type="checkbox"] { accent-color: #1DB954; }
+        input[type="file"]     { display: none; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        select option { background: #1a1a1a; color: #fff; }
+        .drag-active { border-color: #1DB954 !important; background: rgba(29,185,84,0.07) !important; }
+        .animate-pulse-bar { animation: pulseBar 1.5s ease-in-out infinite; }
+        @keyframes pulseBar {
+            0%,100% { box-shadow: 0 0 6px rgba(29,185,84,0.4); }
+            50%      { box-shadow: 0 0 18px rgba(29,185,84,0.8); }
+        }
+        .log-info     { color: #666; }
+        .log-success  { color: #1DB954; }
+        .log-error    { color: #e05555; }
+        .log-progress { color: #FFD700; }
+        .log-warn     { color: #f59e0b; }
+        /* Accordion */
+        .acc-body { overflow: hidden; transition: max-height 0.28s ease, opacity 0.22s ease; max-height: 0; opacity: 0; }
+        .acc-body.open { max-height: 2000px; opacity: 1; }
+        .acc-chevron { transition: transform 0.22s ease; }
+        .acc-open .acc-chevron { transform: rotate(180deg); }
+        /* Toggle switch */
+        .toggle-track { position:relative; display:inline-flex; align-items:center; width:36px; height:20px; background:#3a3a3a; border-radius:10px; cursor:pointer; transition:background .2s; flex-shrink:0; }
+        .toggle-track.on { background:#1DB954; }
+        .toggle-thumb { position:absolute; left:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.4); }
+        .toggle-track.on .toggle-thumb { left:18px; }
+        /* Mobile */
+        @media (max-width: 820px) {
+            .main-grid { grid-template-columns: 1fr !important; }
+            .sidebar    { border-right: none !important; border-bottom: 1px solid #2e2e2e; max-height: 60vh; }
+        }
+        /* Input base */
+        .inp { width:100%; background:#242424; border:1px solid #2e2e2e; color:#fff; font-size:.8125rem; border-radius:.5rem; padding:.55rem .75rem; outline:none; transition:border-color .2s; }
+        .inp:focus { border-color:#1DB954; }
+        .inp::placeholder { color:#555; }
+        select.inp { appearance:none; cursor:pointer; }
+        /* Section label */
+        .slabel { display:block; font-size:.625rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#666; margin-bottom:.5rem; }
+        /* Grid rows */
+        .g2 { display:grid; grid-template-columns:1fr 1fr; gap:.625rem; }
+        .g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden bg-[#080808] text-white font-sans">
+
+<!-- ============================== HEADER ============================== -->
+<header class="bg-surface border-b border-border px-4 py-2.5 flex items-center justify-between gap-3 z-10 shrink-0 flex-wrap">
+    <h1 class="text-[13px] font-bold flex items-center gap-2 whitespace-nowrap m-0 flex-shrink-0">
+        <svg class="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 100 18A9 9 0 0012 3zm0 2a7 7 0 110 14A7 7 0 0112 5zm-1 3v5.586l3.707 3.707-1.414 1.414L9 14.414V8h2z"/></svg>
+        Aureon - Blu3scr33n
+        <span class="text-[9px] font-black bg-accent text-black px-1.5 py-0.5 rounded leading-tight">PROD</span>
+    </h1>
+
+    <div class="flex items-center gap-2 flex-1 justify-end min-w-0 flex-wrap">
+        <div id="statusDot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors duration-300 flex-shrink-0" title="Connecting…"></div>
+        <input type="url" id="apiBase" value="http://localhost:3297" placeholder="API URL"
+               class="bg-surface-input border border-border text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors w-48 flex-shrink-0">
+        <input type="password" id="apiKey" placeholder="API Key (optional)"
+               class="bg-surface-input border border-border text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-accent transition-colors w-36 flex-shrink-0">
+        <button id="pingBtn" title="Check connection"
+                class="text-[11px] bg-surface-elevated border border-border text-[#888] hover:text-white hover:border-accent px-3 py-2 rounded-lg transition-colors flex-shrink-0">
+            Ping
+        </button>
+        <button id="statsBtn" title="Server stats"
+                class="text-[11px] bg-surface-elevated border border-border text-[#888] hover:text-white hover:border-accent px-3 py-2 rounded-lg transition-colors flex-shrink-0">
+            Stats
+        </button>
+    </div>
+</header>
+
+<!-- ============================== MAIN LAYOUT ============================== -->
+<div class="main-grid flex-1 overflow-hidden grid" style="grid-template-columns: 400px 1fr;">
+
+    <!-- ================================ SIDEBAR ================================ -->
+    <aside class="sidebar bg-surface-elevated border-r border-border px-4 py-4 overflow-y-auto flex flex-col gap-3.5">
+
+        <!-- ── 1 · Source Audio ── -->
+        <section>
+            <span class="slabel">1 · Source Audio <span class="text-[#444] font-normal normal-case">(ref / source)</span></span>
+            <div id="dropZone"
+                 class="relative flex flex-col items-center justify-center gap-1.5 p-4 rounded-xl border border-dashed border-[#444] bg-white/[.03] cursor-pointer hover:border-accent hover:bg-[rgba(29,185,84,0.05)] transition-all text-xs text-[#666] hover:text-accent select-none"
+                 onclick="document.getElementById('audioUpload').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag-active')"
+                 ondragleave="this.classList.remove('drag-active')"
+                 ondrop="handleDrop(event)">
+                <svg class="w-6 h-6 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                <span id="uploadLabel">Tap or drag to upload audio</span>
+                <input type="file" id="audioUpload" accept="audio/*">
+            </div>
+            <p class="text-[10px] text-[#444] mt-1.5 leading-relaxed">Required for Cover, Repaint, Lego &amp; Extract modes.</p>
+        </section>
+
+        <!-- ── 2 · Task Mode ── -->
+        <section>
+            <span class="slabel">2 · Task Mode</span>
+            <select id="taskType" class="inp">
+                <option value="text2music">🎵 Text to Music</option>
+                <option value="cover">🎭 Style Transfer / Cover</option>
+                <option value="repaint">🎨 In-Painting / Repaint</option>
+                <option value="lego">🧩 Layer Injection / Lego</option>
+                <option value="extract">✂️ Stem Extraction</option>
+                <option value="complete">▶️ Complete / Extend</option>
+            </select>
+        </section>
+
+        <!-- ── Target Layer (lego/extract) ── -->
+        <section id="trackNameGroup" class="hidden">
+            <span class="slabel">Target Layer / Stem</span>
+            <select id="trackName" class="inp">
+                <option value="vocals">🎤 Vocals</option>
+                <option value="drums">🥁 Drums</option>
+                <option value="bass">🎸 Bass</option>
+                <option value="guitar">🎸 Guitar</option>
+                <option value="piano">🎹 Piano</option>
+                <option value="synth">🎛 Synth / Keys</option>
+                <option value="strings">🎻 Strings</option>
+                <option value="brass">🎷 Brass</option>
+            </select>
+            <div class="mt-2">
+                <span class="slabel mb-1">Track Classes <span class="text-[#444] font-normal normal-case">(comma-separated instruments)</span></span>
+                <input type="text" id="trackClasses" placeholder="e.g. piano, guitar, synth" class="inp">
+            </div>
+        </section>
+
+        <!-- ── Custom Instruction (non-text2music) ── -->
+        <section id="instructionGroup" class="hidden">
+            <span class="slabel">Edit Instruction <span class="text-[#444] font-normal normal-case">(auto-generated if empty)</span></span>
+            <textarea id="instruction" rows="2" placeholder="Custom instruction override…" class="inp resize-y min-h-[54px] font-mono text-[11px] leading-relaxed"></textarea>
+        </section>
+
+        <!-- ── 3 · Sample Mode / Prompt ── -->
+        <section>
+            <div class="flex items-center justify-between mb-2">
+                <span class="slabel mb-0">3 · Prompt &amp; Lyrics</span>
+                <div class="flex items-center gap-1.5">
+                    <button id="randomSampleBtn" title="Fill random example"
+                            class="text-[10px] border border-border text-[#666] hover:text-accent hover:border-accent px-2 py-1 rounded transition-colors">
+                        🎲 Random
+                    </button>
+                    <button id="formatInputBtn" title="Enhance with LM"
+                            class="text-[10px] border border-border text-[#666] hover:text-accent hover:border-accent px-2 py-1 rounded transition-colors">
+                        ✨ Format
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sample Mode toggle -->
+            <div class="flex items-center gap-2.5 mb-2 p-2.5 rounded-lg bg-white/[.02] border border-border">
+                <div id="sampleModeToggle" class="toggle-track" onclick="toggleSampleMode()"><div class="toggle-thumb"></div></div>
+                <div>
+                    <p class="text-[12px] font-semibold leading-none">Description Mode</p>
+                    <p class="text-[10px] text-[#555] mt-0.5">Auto-generate from a natural language query</p>
+                </div>
+            </div>
+
+            <!-- Sample Query (visible in sample mode) -->
+            <div id="sampleQueryGroup" class="hidden">
+                <label class="slabel mb-1" for="sampleQuery">Description Query</label>
+                <textarea id="sampleQuery" rows="3"
+                          placeholder="e.g. a soft Bengali love song for a quiet evening…"
+                          class="inp resize-y min-h-[72px] leading-relaxed"></textarea>
+                <div class="flex items-center gap-2.5 mt-2">
+                    <div id="useFormatToggle" class="toggle-track" onclick="toggleField('useFormat','useFormatToggle')"><div class="toggle-thumb"></div></div>
+                    <input type="hidden" id="useFormat" value="false">
+                    <span class="text-[11px] text-[#888]">Enhance with LM (use_format)</span>
+                </div>
+            </div>
+
+            <!-- Prompt / Lyrics (hidden in sample mode) -->
+            <div id="promptGroup">
+                <label class="slabel mb-1" for="prompt">Style / Description Prompt</label>
+                <textarea id="prompt" rows="3"
+                          placeholder="e.g. 80s synthwave, upbeat, female vocals, reverb-heavy…"
+                          class="inp resize-y min-h-[72px] font-mono text-[11px] leading-relaxed"></textarea>
+
+                <label class="slabel mt-2.5 mb-1" for="lyrics">Lyrics <span class="text-[#444] font-normal normal-case">(optional)</span></label>
+                <textarea id="lyrics" rows="3"
+                          placeholder="[Verse 1]&#10;…"
+                          class="inp resize-y min-h-[54px] font-mono text-[11px] leading-relaxed"></textarea>
+            </div>
+        </section>
+
+        <!-- ── 4 · Music Attributes ── -->
+        <section>
+            <button class="acc-trigger acc-open w-full flex items-center justify-between" onclick="toggleAcc(this)">
+                <span class="slabel mb-0">4 · Music Attributes</span>
+                <svg class="acc-chevron w-3.5 h-3.5 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="acc-body open pt-2">
+                <div class="g3 mb-2.5">
+                    <div>
+                        <label class="slabel mb-1" for="vocalLanguage">Language</label>
+                        <input type="text" id="vocalLanguage" value="en" placeholder="en/zh/ja" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="duration">Duration (s)</label>
+                        <input type="number" id="duration" value="30" min="8" max="600" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="bpm">BPM</label>
+                        <input type="number" id="bpm" placeholder="auto" min="30" max="300" class="inp">
+                    </div>
+                </div>
+                <div class="g3">
+                    <div>
+                        <label class="slabel mb-1" for="keyScale">Key / Scale</label>
+                        <input type="text" id="keyScale" placeholder="C Major" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="timeSignature">Time Sig.</label>
+                        <select id="timeSignature" class="inp">
+                            <option value="">Auto</option>
+                            <option value="4">4 (4/4)</option>
+                            <option value="3">3 (3/4)</option>
+                            <option value="2">2 (2/4)</option>
+                            <option value="6">6 (6/8)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="audioFormat">Format</label>
+                        <select id="audioFormat" class="inp">
+                            <option value="mp3">MP3</option>
+                            <option value="flac">FLAC</option>
+                            <option value="wav">WAV</option>
+                            <option value="wav32">WAV32</option>
+                            <option value="opus">Opus</option>
+                            <option value="aac">AAC</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── 5 · Audio Influence (cover/lego) ── -->
+        <section id="strengthGroup" class="hidden">
+            <span class="slabel">Audio Influence (audio_cover_strength)</span>
+            <div class="flex items-center gap-3">
+                <span class="text-[10px] text-[#444]">Creative</span>
+                <input type="range" id="strength" min="0" max="100" value="40" class="flex-1 h-4">
+                <span id="strengthVal" class="text-xs text-accent font-mono w-10 text-right">0.40</span>
+                <span class="text-[10px] text-[#444]">Faithful</span>
+            </div>
+        </section>
+
+        <!-- ── 6 · Generation Control ── -->
+        <section>
+            <button class="acc-trigger acc-open w-full flex items-center justify-between" onclick="toggleAcc(this)">
+                <span class="slabel mb-0">5 · Generation Control</span>
+                <svg class="acc-chevron w-3.5 h-3.5 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="acc-body open pt-2 flex flex-col gap-2.5">
+
+                <!-- Steps + CFG Scale + Infer Method + Shift -->
+                <div class="g2">
+                    <div>
+                        <label class="slabel mb-1" for="steps">Diff. Steps</label>
+                        <input type="number" id="steps" value="8" min="1" max="200" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="guidance">CFG Scale</label>
+                        <input type="number" id="guidance" value="7.0" step="0.5" min="0" max="20" class="inp">
+                    </div>
+                </div>
+                <div class="g2">
+                    <div>
+                        <label class="slabel mb-1" for="inferMethod">Infer Method</label>
+                        <select id="inferMethod" class="inp">
+                            <option value="ode">ODE (Euler)</option>
+                            <option value="sde">SDE (Stochastic)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="shift">Shift <span class="text-[#444] font-normal normal-case">(base only)</span></label>
+                        <input type="number" id="shift" value="3.0" step="0.1" min="1.0" max="5.0" class="inp" title="Timestep shift. Only effective for base models.">
+                    </div>
+                </div>
+
+                <!-- Custom Timesteps -->
+                <div>
+                    <label class="slabel mb-1" for="timesteps">Custom Timesteps <span class="text-[#444] font-normal normal-case">(overrides steps + shift)</span></label>
+                    <input type="text" id="timesteps" placeholder="0.97,0.76,0.615,0.5,0.395,0.28,0.18,0.085,0" class="inp font-mono text-[11px]">
+                </div>
+
+                <!-- Seed -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="slabel mb-0">Seed</span>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" id="useRandomSeed" checked class="w-3 h-3 rounded">
+                            <span class="text-[10px] text-[#666]">Random</span>
+                        </label>
+                    </div>
+                    <input type="number" id="seed" value="-1" placeholder="-1" class="inp" id="seedInput">
+                </div>
+
+                <!-- CFG Interval -->
+                <div class="g2">
+                    <div>
+                        <label class="slabel mb-1" for="cfgStart">CFG Start</label>
+                        <input type="number" id="cfgStart" value="0.0" step="0.05" min="0" max="1" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="cfgEnd">CFG End</label>
+                        <input type="number" id="cfgEnd" value="1.0" step="0.05" min="0" max="1" class="inp">
+                    </div>
+                </div>
+
+                <!-- ADG + Tiled Decode toggles -->
+                <div class="flex items-center gap-4 flex-wrap">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="useAdg" class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">ADG <span class="text-[#555] text-[10px]">(base only)</span></span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="useTiledDecode" checked class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">Tiled Decode</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="useFormat2" class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">Format Input <span class="text-[#555] text-[10px]">(use_format)</span></span>
+                    </label>
+                </div>
+
+                <!-- Batch Size -->
+                <div>
+                    <span class="slabel mb-1.5">Batch Size</span>
+                    <div class="flex gap-2">
+                        <button data-batch="1" onclick="setBatch(1)"
+                                class="batch-btn flex-1 py-1.5 text-xs font-bold rounded-lg border border-accent bg-accent text-black transition-all">1</button>
+                        <button data-batch="2" onclick="setBatch(2)"
+                                class="batch-btn flex-1 py-1.5 text-xs font-bold rounded-lg border border-border text-[#888] hover:border-accent hover:text-white transition-all">2</button>
+                        <button data-batch="4" onclick="setBatch(4)"
+                                class="batch-btn flex-1 py-1.5 text-xs font-bold rounded-lg border border-border text-[#888] hover:border-accent hover:text-white transition-all">4</button>
+                        <button data-batch="8" onclick="setBatch(8)"
+                                class="batch-btn flex-1 py-1.5 text-xs font-bold rounded-lg border border-border text-[#888] hover:border-accent hover:text-white transition-all">8</button>
+                    </div>
+                    <input type="hidden" id="batchSize" value="1">
+                </div>
+
+                <!-- Thinking Mode -->
+                <div class="flex items-center gap-2.5 py-1">
+                    <div id="thinkingToggle" class="toggle-track on" onclick="toggleField('thinkingHidden','thinkingToggle')"><div class="toggle-thumb"></div></div>
+                    <input type="hidden" id="thinkingHidden" value="true">
+                    <div>
+                        <p class="text-[12px] font-semibold leading-none">Reasoning / Thinking</p>
+                        <p class="text-[10px] text-[#555] mt-0.5">5Hz LM generates audio codes (lm-dit)</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ── 7 · Model Selection ── -->
+        <section>
+            <button class="acc-trigger acc-open w-full flex items-center justify-between" onclick="toggleAcc(this)">
+                <span class="slabel mb-0">6 · Model Selection</span>
+                <svg class="acc-chevron w-3.5 h-3.5 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="acc-body open pt-2">
+                <label class="slabel mb-1" for="modelSelect">DiT Model</label>
+                <select id="modelSelect" class="inp">
+                    <option value="">Default (server selected)</option>
+                </select>
+                <p class="text-[10px] text-[#444] mt-1">Models loaded from /v1/models on connection.</p>
+            </div>
+        </section>
+
+        <!-- ── 8 · Advanced LM Settings ── -->
+        <section>
+            <button class="acc-trigger w-full flex items-center justify-between" onclick="toggleAcc(this)">
+                <span class="slabel mb-0">7 · Advanced LM Settings</span>
+                <svg class="acc-chevron w-3.5 h-3.5 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="acc-body pt-2 flex flex-col gap-2.5">
+
+                <div class="g2">
+                    <div>
+                        <label class="slabel mb-1" for="lmModelPath">LM Model Path</label>
+                        <input type="text" id="lmModelPath" placeholder="server default" class="inp text-[11px]">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="lmBackend">LM Backend</label>
+                        <select id="lmBackend" class="inp">
+                            <option value="vllm">vllm</option>
+                            <option value="pt">pt</option>
+                            <option value="mlx">mlx</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="g3">
+                    <div>
+                        <label class="slabel mb-1" for="lmTemperature">Temperature</label>
+                        <input type="number" id="lmTemperature" value="0.85" step="0.05" min="0" max="2" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="lmCfgScale">CFG Scale</label>
+                        <input type="number" id="lmCfgScale" value="2.5" step="0.1" min="1" max="10" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="lmRepetitionPenalty">Rep. Penalty</label>
+                        <input type="number" id="lmRepetitionPenalty" value="1.0" step="0.05" min="1" max="2" class="inp">
+                    </div>
+                </div>
+
+                <div class="g2">
+                    <div>
+                        <label class="slabel mb-1" for="lmTopK">Top-K <span class="text-[#444] font-normal normal-case">(0=off)</span></label>
+                        <input type="number" id="lmTopK" placeholder="0" min="0" max="200" class="inp">
+                    </div>
+                    <div>
+                        <label class="slabel mb-1" for="lmTopP">Top-P</label>
+                        <input type="number" id="lmTopP" value="0.9" step="0.05" min="0" max="1" class="inp">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="slabel mb-1" for="lmNegativePrompt">LM Negative Prompt</label>
+                    <input type="text" id="lmNegativePrompt" value="NO USER INPUT" class="inp text-[11px]">
+                </div>
+
+                <!-- CoT flags -->
+                <div class="border border-border rounded-lg p-3 flex flex-col gap-2">
+                    <span class="slabel mb-0">Chain-of-Thought &amp; Decoding</span>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="useCotCaption" checked class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">use_cot_caption</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="useCotLanguage" checked class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">use_cot_language</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="constrainedDecoding" checked class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">constrained_decoding</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="allowLmBatch" checked class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">allow_lm_batch</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="constrainedDecodingDebug" class="w-3 h-3 rounded">
+                        <span class="text-[11px] text-[#888]">constrained_decoding_debug</span>
+                    </label>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ── Generate Button ── -->
+        <button id="submitBtn"
+                class="w-full py-3 rounded-full bg-accent hover:bg-accent-hover text-black font-bold text-sm uppercase tracking-wider transition-all shadow-lg shadow-[rgba(29,185,84,0.2)] hover:-translate-y-px active:translate-y-0 disabled:bg-[#2a2a2a] disabled:text-[#555] disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none mt-1 mb-1">
+            ✨ Generate Music
+        </button>
+
+    </aside>
+
+    <!-- ================================ CONTENT AREA ================================ -->
+    <main class="flex flex-col gap-4 p-4 overflow-y-auto bg-gradient-to-br from-[#0d0d0d] to-[#080808]">
+
+        <!-- Waveform Panel -->
+        <div id="waveformWrapper" class="hidden bg-[#0f0f0f] rounded-xl p-4 border border-border">
+            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h3 class="text-[11px] font-bold text-[#555] uppercase tracking-wide m-0">Source / Reference Audio</h3>
+                <div class="flex items-center gap-2">
+                    <button id="wsLoopBtn" title="Loop"
+                            class="w-7 h-7 rounded-full bg-white/10 border border-border flex items-center justify-center text-xs hover:border-accent transition-all">🔁</button>
+                    <button id="wsStopBtn" title="Stop"
+                            class="w-7 h-7 rounded-full bg-white/10 border border-border flex items-center justify-center text-xs hover:border-accent transition-all">⏹</button>
+                    <button id="wsPlayBtn" title="Play/Pause"
+                            class="w-9 h-9 rounded-full bg-accent text-black border-none flex items-center justify-center hover:scale-105 hover:brightness-110 transition-all">▶</button>
+                    <span id="wsTimeDisplay" class="font-mono text-xs text-accent ml-1 min-w-[70px] text-right">0:00</span>
+                </div>
+            </div>
+            <div id="waveform" class="w-full"></div>
+            <div class="flex items-center justify-between mt-3 text-xs text-gold">
+                <span id="regionText" class="flex-1 text-[11px]">No region selected · drag on waveform to select a repaint range</span>
+                <button id="clearRegionBtn"
+                        class="border border-[#3a3a3a] text-[#666] hover:text-white hover:border-[#555] rounded px-2 py-1 text-[10px] transition-colors">
+                    Clear
+                </button>
+            </div>
+            <input type="hidden" id="regionStart" value="0">
+            <input type="hidden" id="regionEnd"   value="-1">
+        </div>
+
+        <!-- Status Area -->
+        <div id="statusArea">
+            <!-- Smart Progress Bar -->
+            <div id="progressContainer" class="hidden mb-3">
+                <div class="flex items-center justify-between mb-1">
+                    <span id="progressLabel" class="text-[11px] text-[#666]">Generating…</span>
+                    <span id="progressPct"   class="text-[11px] font-bold text-accent font-mono">0%</span>
+                </div>
+                <div class="h-1.5 bg-white/[.07] rounded-full overflow-hidden">
+                    <div id="progressFill"
+                         class="h-full w-0 bg-gradient-to-r from-accent to-accent-hover rounded-full animate-pulse-bar"
+                         style="transition: width 0.2s linear;"></div>
+                </div>
+            </div>
+
+            <!-- Log Console -->
+            <div id="logConsole"
+                 class="bg-black/40 border border-border rounded-xl p-3 font-mono text-[11px] text-[#bbb] h-24 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                <div class="text-[#555]">Welcome to Aureon - Blu3scr33n · Production Ready</div>
+            </div>
+        </div>
+
+        <!-- Server Stats Bar (hidden until fetched) -->
+        <div id="statsBar" class="hidden flex items-center gap-4 px-4 py-2.5 rounded-xl border border-border bg-[#0f0f0f] text-[11px] flex-wrap">
+            <span class="text-[#555] font-semibold uppercase text-[10px] tracking-wide">Server</span>
+            <span>Total: <span id="st_total" class="text-accent font-mono">—</span></span>
+            <span>Queued: <span id="st_queued" class="text-yellow-400 font-mono">—</span></span>
+            <span>Running: <span id="st_running" class="text-blue-400 font-mono">—</span></span>
+            <span>Succeeded: <span id="st_succeeded" class="text-green-400 font-mono">—</span></span>
+            <span>Failed: <span id="st_failed" class="text-red-400 font-mono">—</span></span>
+            <span>Avg: <span id="st_avg" class="text-[#888] font-mono">—</span>s</span>
+        </div>
+
+        <!-- Results -->
+        <section>
+            <div class="flex items-center justify-between mb-3 border-b border-border pb-3">
+                <h3 class="text-[13px] font-bold m-0">Generated Results</h3>
+                <button onclick="clearResults()" class="text-[11px] text-[#444] hover:text-[#888] transition-colors">
+                    Clear all
+                </button>
+            </div>
+            <div id="resultsGrid" class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));"></div>
+            <div id="emptyState" class="flex flex-col items-center justify-center py-16 text-center text-[#444]">
+                <svg class="w-12 h-12 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                <p class="text-sm font-medium">No generations yet</p>
+                <p class="text-xs mt-1">Configure your parameters and hit Generate</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ============================== JAVASCRIPT ============================== -->
+<script>
+'use strict';
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const g  = id => document.getElementById(id);
+const el = {
+    apiBase:           () => g('apiBase').value.trim().replace(/\/+$/, ''),
+    apiKey:            () => g('apiKey').value.trim(),
+    fileInput:         g('audioUpload'),
+    uploadLabel:       g('uploadLabel'),
+    dropZone:          g('dropZone'),
+    taskType:          g('taskType'),
+    prompt:            g('prompt'),
+    lyrics:            g('lyrics'),
+    sampleQuery:       g('sampleQuery'),
+    instruction:       g('instruction'),
+    vocalLanguage:     g('vocalLanguage'),
+    duration:          g('duration'),
+    bpm:               g('bpm'),
+    keyScale:          g('keyScale'),
+    timeSignature:     g('timeSignature'),
+    audioFormat:       g('audioFormat'),
+    steps:             g('steps'),
+    guidance:          g('guidance'),
+    inferMethod:       g('inferMethod'),
+    shift:             g('shift'),
+    timesteps:         g('timesteps'),
+    useRandomSeed:     g('useRandomSeed'),
+    seed:              g('seed'),
+    cfgStart:          g('cfgStart'),
+    cfgEnd:            g('cfgEnd'),
+    useAdg:            g('useAdg'),
+    useTiledDecode:    g('useTiledDecode'),
+    useFormat2:        g('useFormat2'),
+    batchSize:         g('batchSize'),
+    thinkingHidden:    g('thinkingHidden'),
+    modelSelect:       g('modelSelect'),
+    trackName:         g('trackName'),
+    trackClasses:      g('trackClasses'),
+    trackNameGroup:    g('trackNameGroup'),
+    instructionGroup:  g('instructionGroup'),
+    strengthGroup:     g('strengthGroup'),
+    strength:          g('strength'),
+    strengthVal:       g('strengthVal'),
+    regionStart:       g('regionStart'),
+    regionEnd:         g('regionEnd'),
+    regionText:        g('regionText'),
+    clearRegionBtn:    g('clearRegionBtn'),
+    waveformWrapper:   g('waveformWrapper'),
+    submitBtn:         g('submitBtn'),
+    logConsole:        g('logConsole'),
+    resultsGrid:       g('resultsGrid'),
+    emptyState:        g('emptyState'),
+    progressContainer: g('progressContainer'),
+    progressFill:      g('progressFill'),
+    progressPct:       g('progressPct'),
+    progressLabel:     g('progressLabel'),
+    wsPlayBtn:         g('wsPlayBtn'),
+    wsStopBtn:         g('wsStopBtn'),
+    wsLoopBtn:         g('wsLoopBtn'),
+    wsTimeDisplay:     g('wsTimeDisplay'),
+    statusDot:         g('statusDot'),
+    pingBtn:           g('pingBtn'),
+    statsBtn:          g('statsBtn'),
+    statsBar:          g('statsBar'),
+    // LM
+    lmModelPath:           g('lmModelPath'),
+    lmBackend:             g('lmBackend'),
+    lmTemperature:         g('lmTemperature'),
+    lmCfgScale:            g('lmCfgScale'),
+    lmRepetitionPenalty:   g('lmRepetitionPenalty'),
+    lmTopK:                g('lmTopK'),
+    lmTopP:                g('lmTopP'),
+    lmNegativePrompt:      g('lmNegativePrompt'),
+    useCotCaption:         g('useCotCaption'),
+    useCotLanguage:        g('useCotLanguage'),
+    constrainedDecoding:   g('constrainedDecoding'),
+    allowLmBatch:          g('allowLmBatch'),
+    constrainedDecodingDebug: g('constrainedDecodingDebug'),
+    sampleModeToggle:      g('sampleModeToggle'),
+    sampleQueryGroup:      g('sampleQueryGroup'),
+    promptGroup:           g('promptGroup'),
+    useFormat:             g('useFormat'),
+    useFormatToggle:       g('useFormatToggle'),
+    thinkingToggle:        g('thinkingToggle'),
+};
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let wavesurfer    = null;
+let wsRegions     = null;
+let activeRegion  = null;
+let uploadedFile  = null;
+let resultCount   = 0;
+let currentPollId = null;
+let sampleModeOn  = false;
+
+// ─── Build auth headers ───────────────────────────────────────────────────────
+function authHeaders(extra = {}) {
+    const key = el.apiKey();
+    return key ? { ...extra, 'Authorization': `Bearer ${key}` } : extra;
+}
+
+// ─── Accordion ────────────────────────────────────────────────────────────────
+function toggleAcc(btn) {
+    const body = btn.nextElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    btn.classList.toggle('acc-open', !isOpen);
+}
+
+// ─── Custom Toggle helper ─────────────────────────────────────────────────────
+function toggleField(hiddenId, trackId) {
+    const hidden = g(hiddenId);
+    const track  = g(trackId);
+    const isOn   = hidden.value === 'true';
+    hidden.value = isOn ? 'false' : 'true';
+    track.classList.toggle('on', !isOn);
+}
+
+// ─── Sample Mode toggle ───────────────────────────────────────────────────────
+function toggleSampleMode() {
+    sampleModeOn = !sampleModeOn;
+    el.sampleModeToggle.classList.toggle('on', sampleModeOn);
+    el.sampleQueryGroup.classList.toggle('hidden', !sampleModeOn);
+    el.promptGroup.classList.toggle('hidden', sampleModeOn);
+}
+
+// ─── Task Type conditional UI ─────────────────────────────────────────────────
+el.taskType.addEventListener('change', updateTaskUI);
+function updateTaskUI() {
+    const t = el.taskType.value;
+    const needsAudio = t !== 'text2music';
+    el.strengthGroup.classList.toggle('hidden',    !(t === 'cover' || t === 'lego'));
+    el.trackNameGroup.classList.toggle('hidden',   !(t === 'lego' || t === 'extract'));
+    el.instructionGroup.classList.toggle('hidden', t === 'text2music');
+    // Auto-set thinking default per task type
+    const forceNoThinking = ['lego','extract','repaint','complete'].includes(t);
+    el.thinkingHidden.value = forceNoThinking ? 'false' : 'true';
+    el.thinkingToggle.classList.toggle('on', !forceNoThinking);
+}
+
+// ─── Audio Influence slider display ──────────────────────────────────────────
+el.strength.addEventListener('input', () => {
+    el.strengthVal.textContent = (el.strength.value / 100).toFixed(2);
+});
+
+// ─── Seed visibility ──────────────────────────────────────────────────────────
+el.useRandomSeed.addEventListener('change', () => {
+    el.seed.disabled = el.useRandomSeed.checked;
+    el.seed.classList.toggle('opacity-40', el.useRandomSeed.checked);
+});
+el.useRandomSeed.dispatchEvent(new Event('change'));
+
+// ─── Batch Selector ──────────────────────────────────────────────────────────
+function setBatch(n) {
+    el.batchSize.value = n;
+    document.querySelectorAll('.batch-btn').forEach(b => {
+        const active = parseInt(b.dataset.batch) === n;
+        b.classList.toggle('bg-accent',     active);
+        b.classList.toggle('text-black',    active);
+        b.classList.toggle('border-accent', active);
+        b.classList.toggle('text-[#888]',   !active);
+        b.classList.toggle('border-border', !active);
+    });
+}
+
+// ─── File Handling ───────────────────────────────────────────────────────────
+function handleFileDrop(file) {
+    if (!file?.type?.startsWith('audio/')) {
+        log('Only audio files are accepted.', 'log-error'); return;
+    }
+    uploadedFile = file;
+    const short = file.name.length > 30 ? file.name.substring(0, 27) + '…' : file.name;
+    el.uploadLabel.textContent    = '✅ ' + short;
+    el.dropZone.style.borderColor = '#1DB954';
+    el.dropZone.style.color       = '#1DB954';
+    el.waveformWrapper.classList.remove('hidden');
+    initWaveSurfer();
+    wavesurfer.load(URL.createObjectURL(file));
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    el.dropZone.classList.remove('drag-active');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleFileDrop(file);
+}
+
+el.fileInput.addEventListener('change', e => {
+    const file = e.target.files?.[0];
+    if (file) handleFileDrop(file);
+});
+
+// ─── WaveSurfer ──────────────────────────────────────────────────────────────
+function initWaveSurfer() {
+    if (wavesurfer) { wavesurfer.destroy(); wsRegions = null; activeRegion = null; }
+    wavesurfer = WaveSurfer.create({
+        container: '#waveform', waveColor: '#1DB954', progressColor: '#1ed760',
+        height: 72, cursorColor: '#FF6B35', cursorWidth: 2,
+        barWidth: 2, barGap: 2, barRadius: 2, normalize: true,
+    });
+    wavesurfer.on('ready', () => {
+        el.wsTimeDisplay.textContent = `0:00 / ${fmtTime(wavesurfer.getDuration())}`;
+    });
+    wavesurfer.on('audioprocess', t => {
+        el.wsTimeDisplay.textContent = `${fmtTime(t)} / ${fmtTime(wavesurfer.getDuration())}`;
+    });
+    wavesurfer.on('play',   () => el.wsPlayBtn.textContent = '⏸');
+    wavesurfer.on('pause',  () => el.wsPlayBtn.textContent = '▶');
+    wavesurfer.on('finish', () => {
+        el.wsPlayBtn.textContent = '▶';
+        if (el.wsLoopBtn.classList.contains('bg-accent')) wavesurfer.play();
+    });
+    wsRegions = wavesurfer.registerPlugin(WaveSurfer.Regions.create());
+    wsRegions.enableDragSelection({ color: 'rgba(29,185,84,0.2)' });
+    wsRegions.on('region-created', r => { if (activeRegion) activeRegion.remove(); activeRegion = r; updateRegion(r); });
+    wsRegions.on('region-updated', updateRegion);
+    wsRegions.on('region-out',     r => { if (el.wsLoopBtn.classList.contains('bg-accent')) r.play(); });
+    wsRegions.on('region-clicked', (r, e) => { e.stopPropagation(); r.play(); });
+}
+
+function updateRegion(r) {
+    el.regionStart.value  = r.start.toFixed(2);
+    el.regionEnd.value    = r.end.toFixed(2);
+    el.regionText.textContent = `Selected: ${r.start.toFixed(2)}s – ${r.end.toFixed(2)}s`;
+}
+
+function fmtTime(s) {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
+el.wsPlayBtn.addEventListener('click',  () => wavesurfer?.playPause());
+el.wsStopBtn.addEventListener('click',  () => { wavesurfer?.stop(); el.wsTimeDisplay.textContent = `0:00 / ${fmtTime(wavesurfer?.getDuration()??0)}`; });
+el.wsLoopBtn.addEventListener('click',  () => { el.wsLoopBtn.classList.toggle('bg-accent'); el.wsLoopBtn.classList.toggle('text-black'); });
+el.clearRegionBtn.addEventListener('click', () => {
+    wsRegions?.clearRegions();
+    el.regionStart.value = 0; el.regionEnd.value = -1;
+    el.regionText.textContent = 'No region selected · drag on waveform to select a repaint range';
+    activeRegion = null;
+});
+
+// ─── Smart Progress ──────────────────────────────────────────────────────────
+const ESTIMATED_SEC  = 300;
+const TICK_MS        = 200;
+const BASE_INC = 100 / ((ESTIMATED_SEC * 1000) / TICK_MS);
+
+const PROGRESS_STEPS = {
+    "queued": 0, "initializing": 2, "llm usage": 5, "processing source": 10,
+    "cuda gpu": 15, "loading text_encoder": 18, "loaded model": 22,
+    "dit diffusion": 50, "offloading model": 80, "tiled_decode": 90,
+    "decoding": 92, "downloading": 95, "saving": 98, "done": 100,
+};
+
+const pState = { current: 0, target: 0, timerId: null };
+
+function startSmartProgress() {
+    if (pState.timerId) clearInterval(pState.timerId);
+    pState.current = 0; pState.target = 0;
+    el.progressContainer.classList.remove('hidden');
+    pState.timerId = setInterval(() => {
+        const gap  = pState.target - pState.current;
+        const spd  = gap > 0 ? (2.0 + gap * 1.5) : (gap < -5 ? 0.1 : 1.0);
+        pState.current += BASE_INC * spd;
+        const lim  = pState.target >= 100 ? 100 : 99.5;
+        if (pState.current > lim) pState.current = lim;
+        el.progressFill.style.width = `${pState.current}%`;
+        el.progressPct.textContent  = `${pState.current.toFixed(1)}%`;
+    }, TICK_MS);
+}
+
+function stopSmartProgress() {
+    clearInterval(pState.timerId); pState.timerId = null;
+    el.progressFill.style.width = '100%'; el.progressPct.textContent = '100%';
+    setTimeout(() => { el.progressContainer.classList.add('hidden'); el.progressFill.style.width = '0%'; }, 1200);
+}
+
+function updateProgressTarget(text) {
+    if (!text) return;
+    const t = text.toLowerCase(); let found = 0;
+    for (const [k, p] of Object.entries(PROGRESS_STEPS)) {
+        if (t.includes(k) && p > found) found = p;
+    }
+    if (found > pState.target) {
+        pState.target = found;
+        el.progressLabel.textContent = text.length > 65 ? text.substring(0, 62) + '…' : text;
+    }
+}
+
+// ─── Logging ─────────────────────────────────────────────────────────────────
+function log(msg, type = 'log-info') {
+    const d = document.createElement('div');
+    d.className   = type;
+    d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    el.logConsole.appendChild(d);
+    el.logConsole.scrollTop = el.logConsole.scrollHeight;
+}
+
+// ─── Connection Ping ──────────────────────────────────────────────────────────
+async function pingServer() {
+    const base = el.apiBase();
+    el.statusDot.className = 'w-2 h-2 rounded-full bg-yellow-400 transition-colors duration-300 flex-shrink-0';
+    try {
+        const res = await fetch(`${base}/health`, { headers: authHeaders(), signal: AbortSignal.timeout(5000) });
+        const ok  = res.ok;
+        el.statusDot.className = `w-2 h-2 rounded-full transition-colors duration-300 flex-shrink-0 ${ok ? 'bg-green-500' : 'bg-red-500'}`;
+        if (ok) { log(`Connected · ${base}`, 'log-success'); loadModels(); }
+        else    log(`HTTP ${res.status} from server`, 'log-error');
+    } catch (e) {
+        el.statusDot.className = 'w-2 h-2 rounded-full bg-red-500 transition-colors duration-300 flex-shrink-0';
+        log(`Cannot reach ${base} — ${e.message}`, 'log-error');
+    }
+}
+
+// ─── Load Model List ──────────────────────────────────────────────────────────
+async function loadModels() {
+    try {
+        const res  = await fetch(`${el.apiBase()}/v1/models`, { headers: authHeaders() });
+        const data = await res.json();
+        if (data.code !== 200 || !data.data?.models) return;
+        const models  = data.data.models;
+        const defName = data.data.default_model || '';
+        el.modelSelect.innerHTML = '<option value="">Default (server selected)</option>';
+        models.forEach(m => {
+            const opt  = document.createElement('option');
+            opt.value  = m.name;
+            opt.text   = m.name + (m.is_default ? ' ★' : '');
+            if (m.is_default) opt.selected = true;
+            el.modelSelect.appendChild(opt);
+        });
+        log(`Loaded ${models.length} model(s): ${models.map(m=>m.name).join(', ')}`, 'log-success');
+    } catch(e) {
+        log('Could not load model list: ' + e.message, 'log-warn');
+    }
+}
+
+// ─── Server Stats ─────────────────────────────────────────────────────────────
+async function fetchStats() {
+    try {
+        const res  = await fetch(`${el.apiBase()}/v1/stats`, { headers: authHeaders() });
+        const data = await res.json();
+        if (data.code !== 200 || !data.data) return;
+        const d = data.data;
+        g('st_total').textContent     = d.jobs?.total     ?? '—';
+        g('st_queued').textContent    = d.jobs?.queued    ?? '—';
+        g('st_running').textContent   = d.jobs?.running   ?? '—';
+        g('st_succeeded').textContent = d.jobs?.succeeded ?? '—';
+        g('st_failed').textContent    = d.jobs?.failed    ?? '—';
+        g('st_avg').textContent       = (d.avg_job_seconds ?? 0).toFixed(1);
+        el.statsBar.classList.remove('hidden');
+    } catch(e) {
+        log('Stats fetch failed: ' + e.message, 'log-warn');
+    }
+}
+
+el.pingBtn.addEventListener('click', pingServer);
+el.statsBtn.addEventListener('click', fetchStats);
+g('apiBase').addEventListener('change', pingServer);
+
+// ─── Format Input (LM enhance) ────────────────────────────────────────────────
+g('formatInputBtn').addEventListener('click', async () => {
+    const prompt = el.prompt.value.trim();
+    const lyrics = el.lyrics.value.trim();
+    if (!prompt && !lyrics) { log('Enter a prompt or lyrics to format.', 'log-warn'); return; }
+    log('Formatting input via LM…', 'log-info');
+    try {
+        const paramObj = JSON.stringify({
+            duration:       parseFloat(el.duration.value) || undefined,
+            bpm:            el.bpm.value ? parseInt(el.bpm.value) : undefined,
+            key:            el.keyScale.value || undefined,
+            time_signature: el.timeSignature.value || undefined,
+            language:       el.vocalLanguage.value || 'en',
+        });
+        const res  = await fetch(`${el.apiBase()}/format_input`, {
+            method:  'POST',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ prompt, lyrics, temperature: parseFloat(el.lmTemperature.value), param_obj: paramObj }),
+        });
+        const data = await res.json();
+        if (data.code !== 200) throw new Error(data.error || 'Format failed');
+        const d = data.data;
+        if (d.caption) el.prompt.value        = d.caption;
+        if (d.lyrics)  el.lyrics.value        = d.lyrics;
+        if (d.bpm)     el.bpm.value           = d.bpm;
+        if (d.key_scale)        el.keyScale.value      = d.key_scale;
+        if (d.time_signature)   el.timeSignature.value = d.time_signature;
+        if (d.duration)         el.duration.value      = d.duration;
+        if (d.vocal_language)   el.vocalLanguage.value = d.vocal_language;
+        log('Input formatted and fields updated.', 'log-success');
+    } catch(e) { log('Format error: ' + e.message, 'log-error'); }
+});
+
+// ─── Random Sample ────────────────────────────────────────────────────────────
+g('randomSampleBtn').addEventListener('click', async () => {
+    log('Fetching random sample params…', 'log-info');
+    try {
+        const res  = await fetch(`${el.apiBase()}/create_random_sample`, {
+            method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ sample_type: 'simple_mode' }),
+        });
+        const data = await res.json();
+        if (data.code !== 200) throw new Error(data.error || 'Failed');
+        const d = data.data;
+        if (d.caption)          el.prompt.value        = d.caption;
+        if (d.lyrics)           el.lyrics.value        = d.lyrics;
+        if (d.bpm)              el.bpm.value           = d.bpm;
+        if (d.key_scale)        el.keyScale.value      = d.key_scale;
+        if (d.time_signature)   el.timeSignature.value = d.time_signature;
+        if (d.duration)         el.duration.value      = d.duration;
+        if (d.vocal_language)   el.vocalLanguage.value = d.vocal_language;
+        log('Random sample loaded into fields.', 'log-success');
+    } catch(e) { log('Random sample error: ' + e.message, 'log-error'); }
+});
+
+// ─── Generate ────────────────────────────────────────────────────────────────
+el.submitBtn.addEventListener('click', async () => {
+    const taskType = el.taskType.value;
+
+    if (taskType !== 'text2music' && !uploadedFile) {
+        log('Please upload a source audio file for this task mode.', 'log-error'); return;
+    }
+    if (!sampleModeOn && !el.prompt.value.trim() && taskType === 'text2music') {
+        log('Please enter a style/description prompt.', 'log-error'); return;
+    }
+
+    el.submitBtn.disabled = true;
+    el.logConsole.innerHTML = '';
+    el.emptyState.classList.add('hidden');
+    log('Preparing task…', 'log-info');
+    startSmartProgress();
+    if (currentPollId) { clearInterval(currentPollId); currentPollId = null; }
+
+    try {
+        const fd = new FormData();
+
+        // ── Core ──
+        fd.append('task_type', taskType);
+        fd.append('thinking',  el.thinkingHidden.value);
+
+        // ── Mode: sample vs prompt ──
+        if (sampleModeOn) {
+            fd.append('sample_mode',  'true');
+            fd.append('sample_query', el.sampleQuery.value);
+            fd.append('use_format',   el.useFormat.value);
+        } else {
+            fd.append('sample_mode',  'false');
+            fd.append('prompt',       el.prompt.value);
+            fd.append('lyrics',       el.lyrics.value);
+            fd.append('use_format',   el.useFormat2.checked.toString());
+        }
+
+        // ── Music Attributes ──
+        fd.append('vocal_language',  el.vocalLanguage.value || 'en');
+        fd.append('audio_duration',  el.duration.value);
+        if (el.bpm.value)            fd.append('bpm',            el.bpm.value);
+        if (el.keyScale.value)       fd.append('key_scale',      el.keyScale.value);
+        if (el.timeSignature.value)  fd.append('time_signature', el.timeSignature.value);
+        fd.append('audio_format',    el.audioFormat.value);
+
+        // ── Generation Control ──
+        fd.append('inference_steps',  el.steps.value);
+        fd.append('guidance_scale',   el.guidance.value);
+        fd.append('infer_method',     el.inferMethod.value);
+        fd.append('shift',            el.shift.value);
+        if (el.timesteps.value.trim()) fd.append('timesteps', el.timesteps.value.trim());
+
+        // ── Seed ──
+        fd.append('use_random_seed', el.useRandomSeed.checked.toString());
+        if (!el.useRandomSeed.checked) fd.append('seed', el.seed.value);
+
+        // ── CFG Interval ──
+        fd.append('cfg_interval_start', el.cfgStart.value);
+        fd.append('cfg_interval_end',   el.cfgEnd.value);
+
+        // ── Flags ──
+        fd.append('use_adg',          el.useAdg.checked.toString());
+        fd.append('use_tiled_decode', el.useTiledDecode.checked.toString());
+
+        // ── Batch ──
+        fd.append('batch_size', el.batchSize.value);
+
+        // ── Model ──
+        if (el.modelSelect.value) fd.append('model', el.modelSelect.value);
+
+        // ── Audio Influence ──
+        if (taskType === 'cover' || taskType === 'lego') {
+            fd.append('audio_cover_strength', (el.strength.value / 100).toFixed(2));
+        } else {
+            fd.append('audio_cover_strength', '1.0');
+        }
+
+        // ── Track / Layer ──
+        if (taskType === 'lego' || taskType === 'extract') {
+            fd.append('track_name', el.trackName.value);
+            if (el.trackClasses.value.trim()) {
+                fd.append('track_classes', JSON.stringify(
+                    el.trackClasses.value.split(',').map(s => s.trim()).filter(Boolean)
+                ));
+            }
+        }
+
+        // ── Custom Instruction ──
+        if (el.instruction.value.trim() && taskType !== 'text2music') {
+            fd.append('instruction', el.instruction.value.trim());
+        }
+
+        // ── Source Audio File ──
+        if (uploadedFile) fd.append('src_audio', uploadedFile);
+
+        // ── Repainting Region ──
+        if (taskType === 'repaint' || taskType === 'lego' || taskType === 'complete') {
+            fd.append('repainting_start', el.regionStart.value || '0');
+            fd.append('repainting_end',   el.regionEnd.value   || '-1');
+        }
+
+        // ── LM Parameters ──
+        if (el.lmModelPath.value.trim()) fd.append('lm_model_path', el.lmModelPath.value.trim());
+        fd.append('lm_backend',            el.lmBackend.value);
+        fd.append('lm_temperature',        el.lmTemperature.value);
+        fd.append('lm_cfg_scale',          el.lmCfgScale.value);
+        fd.append('lm_repetition_penalty', el.lmRepetitionPenalty.value);
+        if (el.lmTopK.value) fd.append('lm_top_k', el.lmTopK.value);
+        fd.append('lm_top_p',           el.lmTopP.value);
+        fd.append('lm_negative_prompt', el.lmNegativePrompt.value);
+
+        // ── CoT / Decoding ──
+        fd.append('use_cot_caption',           el.useCotCaption.checked.toString());
+        fd.append('use_cot_language',          el.useCotLanguage.checked.toString());
+        fd.append('constrained_decoding',      el.constrainedDecoding.checked.toString());
+        fd.append('allow_lm_batch',            el.allowLmBatch.checked.toString());
+        fd.append('constrained_decoding_debug',el.constrainedDecodingDebug.checked.toString());
+
+        // ── API Key in body as fallback ──
+        const key = el.apiKey();
+        if (key) fd.append('ai_token', key);
+
+        log('Submitting to /release_task…', 'log-info');
+        const releaseRes  = await fetch(`${el.apiBase()}/release_task`, {
+            method:  'POST',
+            headers: authHeaders(),
+            body:    fd,
+        });
+        const releaseData = await releaseRes.json();
+
+        if (releaseData.code !== 200 || !releaseData.data?.task_id) {
+            throw new Error(releaseData.error || `HTTP ${releaseRes.status}`);
+        }
+
+        const taskId = releaseData.data.task_id;
+        const pos    = releaseData.data.queue_position ?? '?';
+        log(`Task queued · ID: ${taskId.substring(0,16)}… · Position: ${pos}`, 'log-success');
+        pollTask(taskId);
+
+    } catch (e) {
+        log(`Submission error: ${e.message}`, 'log-error');
+        stopSmartProgress();
+        el.submitBtn.disabled = false;
+    }
+});
+
+// ─── Polling ──────────────────────────────────────────────────────────────────
+function pollTask(taskId) {
+    const POLL_MS    = 1500;
+    const MAX_MS     = 15 * 60 * 1000;
+    const startTime  = Date.now();
+
+    currentPollId = setInterval(async () => {
+        if (Date.now() - startTime > MAX_MS) {
+            clearInterval(currentPollId); currentPollId = null;
+            log('Task timeout after 15 minutes.', 'log-error');
+            stopSmartProgress(); el.submitBtn.disabled = false; return;
+        }
+        try {
+            const res  = await fetch(`${el.apiBase()}/query_result`, {
+                method:  'POST',
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ task_id_list: [taskId] }),
+            });
+            const data = await res.json();
+            if (data.code !== 200 || !data.data?.length) return;
+
+            const task = data.data[0];
+            if (task.progress_text) {
+                updateProgressTarget(task.progress_text);
+                log(task.progress_text, 'log-progress');
+            }
+
+            if (task.status === 1) {
+                clearInterval(currentPollId); currentPollId = null;
+                log('Generation complete! ✨', 'log-success');
+                handleSuccess(task);
+                stopSmartProgress();
+                el.submitBtn.disabled = false;
+            } else if (task.status === 2) {
+                clearInterval(currentPollId); currentPollId = null;
+                log(`Generation failed: ${task.progress_text || 'Unknown error'}`, 'log-error');
+                stopSmartProgress();
+                el.submitBtn.disabled = false;
+            }
+        } catch (e) {
+            console.warn('Poll network error (retrying):', e.message);
+        }
+    }, POLL_MS);
+}
+
+// ─── Handle Success ───────────────────────────────────────────────────────────
+function handleSuccess(task) {
+    try {
+        let result = task.result;
+        if (typeof result === 'string') result = JSON.parse(result);
+
+        // result may be an array of items (batch)
+        const items = Array.isArray(result) ? result : [result];
+        items.forEach(item => renderResultCard(item));
+    } catch (e) {
+        log('Result parsing error: ' + e.message, 'log-error');
+    }
+}
+
+function renderResultCard(item) {
+    const base     = el.apiBase();
+    const fileUrl  = item?.url ?? item?.file ?? '';
+    const fullUrl  = fileUrl.startsWith('http') ? fileUrl : `${base}/${fileUrl.replace(/^\/+/, '')}`;
+
+    const metas    = item?.metas ?? {};
+    const prompt   = (item?.prompt || el.prompt.value || '').substring(0, 80);
+    const bpm      = metas.bpm          ?? item?.bpm          ?? '—';
+    const key      = metas.keyscale     ?? item?.keyscale      ?? '—';
+    const dur      = metas.duration     ?? item?.duration      ?? '—';
+    const genre    = metas.genres       ?? item?.genres        ?? '';
+    const timeSig  = metas.timesignature ?? '';
+    const seed     = item?.seed_value   ?? '';
+    const lmModel  = item?.lm_model     ?? '';
+    const ditModel = item?.dit_model    ?? '';
+    const genInfo  = item?.generation_info ?? '';
+
+    resultCount++;
+    el.emptyState.classList.add('hidden');
+
+    const card = document.createElement('div');
+    card.className = 'bg-[#111] border border-border rounded-xl p-4 hover:border-[#3a3a3a] transition-colors';
+    card.innerHTML = `
+        <div class="mb-3">
+            <p class="text-[12px] font-semibold text-white leading-snug mb-1 line-clamp-2">${escHtml(prompt)}${prompt.length >= 80 ? '…' : ''}</p>
+            ${genre ? `<p class="text-[10px] text-accent font-mono mb-1">${escHtml(genre)}</p>` : ''}
+            <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-[#555]">
+                <span>BPM <span class="text-[#999]">${bpm}</span></span>
+                <span>Key <span class="text-[#999]">${key}</span></span>
+                <span>Dur <span class="text-[#999]">${dur}s</span></span>
+                ${timeSig ? `<span>Time <span class="text-[#999]">${timeSig}</span></span>` : ''}
+                ${seed ? `<span>Seed <span class="text-[#999]">${seed.split(',')[0]}</span></span>` : ''}
+            </div>
+            ${lmModel || ditModel ? `
+            <div class="flex gap-3 mt-1 text-[10px] text-[#444]">
+                ${ditModel ? `<span>DiT: <span class="text-[#666]">${escHtml(ditModel)}</span></span>` : ''}
+                ${lmModel  ? `<span>LM: <span class="text-[#666]">${escHtml(lmModel)}</span></span>`  : ''}
+            </div>` : ''}
+        </div>
+        <audio controls class="w-full h-9 mt-1 rounded" src="${escHtml(fullUrl)}"></audio>
+        ${genInfo ? `<details class="mt-2"><summary class="text-[10px] text-[#444] cursor-pointer hover:text-[#777] transition-colors">Generation info</summary><pre class="text-[10px] text-[#555] mt-1 overflow-auto max-h-32 font-mono whitespace-pre-wrap">${escHtml(genInfo)}</pre></details>` : ''}
+        <div class="flex gap-2 mt-3">
+            <a href="${escHtml(fullUrl)}" download
+               class="flex-1 text-center text-[11px] font-semibold py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/30 hover:bg-accent hover:text-black transition-all">
+                ⬇ Download
+            </a>
+            <button onclick="copyUrl('${escHtml(fullUrl)}')"
+                    class="flex-1 text-center text-[11px] font-semibold py-1.5 rounded-lg bg-white/[.04] text-[#888] border border-border hover:border-accent hover:text-white transition-all">
+                📋 Copy URL
+            </button>
+        </div>
+    `;
+    el.resultsGrid.prepend(card);
+    card.style.opacity   = '0';
+    card.style.transform = 'translateY(10px)';
+    requestAnimationFrame(() => {
+        card.style.transition = 'opacity .3s ease, transform .3s ease';
+        card.style.opacity    = '1';
+        card.style.transform  = 'translateY(0)';
+    });
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function escHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => log('URL copied to clipboard', 'log-success'));
+}
+
+function clearResults() {
+    el.resultsGrid.innerHTML = '';
+    el.emptyState.classList.remove('hidden');
+    resultCount = 0;
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+setBatch(1);
+window.addEventListener('load', () => setTimeout(pingServer, 600));
+</script>
+</body>
+</html>
