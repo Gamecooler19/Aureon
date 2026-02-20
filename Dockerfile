@@ -49,7 +49,7 @@ WORKDIR /build
 
 # Copy only what pip needs first (layer-cache optimisation)
 COPY requirements.txt pyproject.toml ./
-COPY acestep/third_parts/nano-vllm ./acestep/third_parts/nano-vllm
+COPY app/acestep/third_parts/nano-vllm ./acestep/third_parts/nano-vllm
 
 # Install PyTorch for Linux x86_64 CUDA 12.8 first (resolves dependency order)
 RUN pip install --no-cache-dir \
@@ -64,7 +64,7 @@ RUN pip install --no-cache-dir -e ./acestep/third_parts/nano-vllm
 # Install all remaining requirements (skips torch since already installed)
 RUN pip install --no-cache-dir \
         safetensors==0.7.0 \
-        transformers ">=4.51.0,<4.58.0" \
+        "transformers>=4.51.0,<4.58.0" \
         diffusers \
         gradio==6.2.0 \
         matplotlib \
@@ -106,10 +106,10 @@ COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application source
-COPY acestep/ ./acestep/
-COPY cli.py ./
+COPY app/acestep/ ./acestep/
+COPY app/cli.py ./
 COPY run.py ./
-COPY ui/ ./ui/
+COPY app/ui/ ./ui/
 COPY pyproject.toml ./
 COPY LICENSE ./
 
