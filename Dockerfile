@@ -114,7 +114,7 @@ COPY pyproject.toml ./
 COPY LICENSE ./
 
 # ── Runtime environment ───────────────────────────────────────────────────────
-# Model / device configuration — override in .env or docker-compose
+# Model / device configuration — override in .env or 7docker-compose
 ENV ACESTEP_CONFIG_PATH=acestep-v15-turbo
 ENV ACESTEP_LM_MODEL_PATH=acestep-5Hz-lm-0.6B
 ENV ACESTEP_DEVICE=auto

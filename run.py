@@ -68,7 +68,7 @@ os.environ.setdefault("ACESTEP_API_HOST", "0.0.0.0")
 # etc.).  Passing sys.argv[1:] lets callers override defaults on the command
 # line while the environment-variable defaults above act as the fallback.
 # ---------------------------------------------------------------------------
-from app.acestep.api_server import main  # noqa: E402 (import after env setup intentional)
+from acestep.api_server import main  # noqa: E402 (import after env setup intentional)
 
 if __name__ == "__main__":
     # Resolve effective host/port for the startup banner.
