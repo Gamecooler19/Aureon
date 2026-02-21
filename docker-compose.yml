@@ -2,6 +2,8 @@
 # Blu3scr33n - Music  ·  ACE-Step 1.5
 # docker compose up -d          →  http://localhost:3297
 # docker compose up -d --build  →  rebuild image first
+#
+# All configurable values are loaded from .env (see .env.example).
 # =============================================================================
 
 services:
@@ -19,6 +21,10 @@ services:
 
     restart: unless-stopped
 
+    # Load variables from .env at project root
+    env_file:
+      - .env
+
     # GPU access (requires nvidia-container-toolkit)
     deploy:
       resources:
@@ -29,7 +35,7 @@ services:
               capabilities: [ gpu ]
 
     ports:
-      - "${HOST_PORT:-3297}:${ACESTEP_API_PORT:-3297}"
+      - "${HOST_PORT}:${ACESTEP_API_PORT}"
 
     # Persistent volumes -------------------------------------------------------
     volumes:
@@ -45,37 +51,20 @@ services:
       # Generated audio outputs (optional — remove if you stream everything)
       - outputs:/app/outputs
 
-    # Environment — these are the defaults; override via .env at project root --
+    # Environment — values come from .env; only fixed paths are set here -------
     environment:
-      # ── Model ──────────────────────────────────────────────────────────────
-      ACESTEP_CONFIG_PATH:      ${ACESTEP_CONFIG_PATH:-acestep-v15-turbo}
-      ACESTEP_LM_MODEL_PATH:    ${ACESTEP_LM_MODEL_PATH:-acestep-5Hz-lm-0.6B}
-      ACESTEP_INIT_LLM:         ${ACESTEP_INIT_LLM:-auto}
-      ACESTEP_DEVICE:           ${ACESTEP_DEVICE:-auto}
-      ACESTEP_LM_BACKEND:       ${ACESTEP_LM_BACKEND:-pt}
-      ACESTEP_NO_INIT:          ${ACESTEP_NO_INIT:-false}
-      ACESTEP_DOWNLOAD_SOURCE:  ${ACESTEP_DOWNLOAD_SOURCE:-auto}
-
-      # ── Server ─────────────────────────────────────────────────────────────
+      # ── Fixed container paths (mapped to volumes above) ────────────────────
       ACESTEP_API_HOST:         0.0.0.0
-      ACESTEP_API_PORT:         ${ACESTEP_API_PORT:-3297}
-      ACESTEP_QUEUE_MAXSIZE:    ${ACESTEP_QUEUE_MAXSIZE:-100}
-      ACESTEP_QUEUE_WORKERS:    ${ACESTEP_QUEUE_WORKERS:-1}
-
-      # ── Auth (leave empty to disable) ──────────────────────────────────────
-      ACESTEP_API_KEY:          ${ACESTEP_API_KEY:-}
-
-      # ── Cache paths (mapped to volumes above) ─────────────────────────────
       HF_HOME:                  /app/.cache/huggingface
       TORCH_HOME:               /app/.cache/torch
       TRITON_CACHE_DIR:         /app/.cache/triton
       TORCHINDUCTOR_CACHE_DIR:  /app/.cache/torchinductor
       ACESTEP_TMPDIR:           /app/.cache/tmp
 
-    # The healthcheck is defined in the Dockerfile; compose surfaces it here ---
+    # Healthcheck --------------------------------------------------------------
     healthcheck:
       test: [ "CMD-SHELL",
-              "curl -sf http://localhost:${ACESTEP_API_PORT:-3297}/health | python3 -c \"import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('data',{}).get('status')=='ok' else 1)\"" ]
+              "curl -sf http://localhost:${ACESTEP_API_PORT}/health | python3 -c \"import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('data',{}).get('status')=='ok' else 1)\"" ]
       interval: 30s
       timeout:  10s
       retries:  3
@@ -85,8 +74,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "50m"
-        max-file: "5"
+        max-size: "${LOG_MAX_SIZE}"
+        max-file: "${LOG_MAX_FILE}"
 
 # =============================================================================
 # Named volumes — Docker manages the lifecycle
