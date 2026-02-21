@@ -144,7 +144,8 @@ RUN mkdir -p \
         /app/.cache/huggingface \
         /app/.cache/torch \
         /app/checkpoints \
-        /app/outputs
+        /app/outputs \
+        /app/Audio
 
 # ── Health check ──────────────────────────────────────────────────────────────
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \

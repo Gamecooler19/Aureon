@@ -48,6 +48,8 @@ services:
       - inductor_cache:/app/.cache/torchinductor
       # Temp inference files
       - tmp_cache:/app/.cache/tmp
+      # Persistent audio output (bind-mount to host for easy access)
+      - ./Audio:/app/Audio
       # Generated audio outputs (optional — remove if you stream everything)
       - outputs:/app/outputs
 
@@ -60,6 +62,7 @@ services:
       TRITON_CACHE_DIR:         /app/.cache/triton
       TORCHINDUCTOR_CACHE_DIR:  /app/.cache/torchinductor
       ACESTEP_TMPDIR:           /app/.cache/tmp
+      AUDIO_OUTPUT_DIR:         /app/Audio
 
     # Healthcheck --------------------------------------------------------------
     healthcheck:

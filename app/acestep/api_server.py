@@ -20,6 +20,8 @@ import glob
 import json
 import os
 import random
+import re
+import shutil
 import sys
 import time
 import traceback
@@ -1316,6 +1318,14 @@ def create_app() -> FastAPI:
         app.state.temp_audio_dir = os.path.join(tmp_root, "api_audio")
         os.makedirs(app.state.temp_audio_dir, exist_ok=True)
 
+        # Persistent audio output directory — every generated track is copied here
+        _audio_output_dir = os.getenv("AUDIO_OUTPUT_DIR", "").strip()
+        if not _audio_output_dir:
+            _audio_output_dir = os.path.join(project_root, "Audio")
+        os.makedirs(_audio_output_dir, exist_ok=True)
+        app.state.audio_output_dir = _audio_output_dir
+        logger.info(f"Persistent audio output directory: {_audio_output_dir}")
+
         # Initialize local cache
         try:
             from acestep.local_cache import get_local_cache
@@ -1339,6 +1349,48 @@ def create_app() -> FastAPI:
                     os.remove(p)
                 except Exception:
                     pass
+
+        def _persist_audio_to_output_dir(
+            result: Optional[Dict],
+            output_dir: str,
+            job_id: str,
+        ) -> None:
+            """Copy generated audio files to the persistent Audio/ output directory.
+
+            Each file is saved with a human-readable name:
+                {YYYYMMDD_HHmmss}_{prompt_slug}_{short_id}.{ext}
+
+            This runs best-effort — failures are logged but never block the
+            response from being returned to the client.
+            """
+            if not result or not output_dir:
+                return
+
+            raw_paths = result.get("raw_audio_paths", [])
+            if not raw_paths:
+                return
+
+            # Build a filename-safe slug from the prompt (max 48 chars)
+            prompt_text = result.get("prompt", "") or ""
+            slug = re.sub(r"[^a-zA-Z0-9]+", "-", prompt_text).strip("-").lower()[:48]
+            if not slug:
+                slug = "untitled"
+
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+
+            for idx, src_path in enumerate(raw_paths):
+                if not src_path or not os.path.isfile(src_path):
+                    continue
+                try:
+                    ext = os.path.splitext(src_path)[1]  # e.g. ".mp3"
+                    short_id = job_id[:8] if job_id else "unknown"
+                    suffix = f"_{idx + 1}" if len(raw_paths) > 1 else ""
+                    dest_name = f"{timestamp}_{slug}_{short_id}{suffix}{ext}"
+                    dest_path = os.path.join(output_dir, dest_name)
+                    shutil.copy2(src_path, dest_path)
+                    logger.info(f"[Audio Output] Saved: {dest_name}")
+                except Exception as exc:
+                    logger.error(f"[Audio Output] Failed to copy {src_path} → {output_dir}: {exc}")
 
         def _update_local_cache(job_id: str, result: Optional[Dict], status: str) -> None:
             """Update local cache with job result"""
@@ -2076,6 +2128,13 @@ def create_app() -> FastAPI:
                 loop = asyncio.get_running_loop()
                 result = await loop.run_in_executor(executor, _blocking_generate)
                 job_store.mark_succeeded(job_id, result)
+
+                # ── Persist generated audio to Audio/ output directory ──────
+                _persist_audio_to_output_dir(
+                    result=result,
+                    output_dir=app.state.audio_output_dir,
+                    job_id=job_id,
+                )
 
                 # Update local cache
                 _update_local_cache(job_id, result, "succeeded")
@@ -3235,8 +3294,11 @@ def create_app() -> FastAPI:
 
         # Security: Validate path is within allowed directory to prevent path traversal
         resolved_path = os.path.realpath(path)
-        allowed_dir = os.path.realpath(request.app.state.temp_audio_dir)
-        if not resolved_path.startswith(allowed_dir + os.sep) and resolved_path != allowed_dir:
+        allowed_temp = os.path.realpath(request.app.state.temp_audio_dir)
+        allowed_output = os.path.realpath(request.app.state.audio_output_dir)
+        in_temp = resolved_path.startswith(allowed_temp + os.sep) or resolved_path == allowed_temp
+        in_output = resolved_path.startswith(allowed_output + os.sep) or resolved_path == allowed_output
+        if not (in_temp or in_output):
             raise HTTPException(status_code=403, detail="Access denied: path outside allowed directory")
         if not os.path.exists(resolved_path):
             raise HTTPException(status_code=404, detail="Audio file not found")
