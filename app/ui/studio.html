@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
     <title>Aureon - Blu3scr33n</title>
 
     <!-- WaveSurfer.js -->
@@ -866,7 +867,11 @@ function updateProgressTarget(text) {
 }
 
 // ─── Logging ─────────────────────────────────────────────────────────────────
+let _lastLogMsg = '';
 function log(msg, type = 'log-info') {
+    // Deduplicate consecutive identical progress messages
+    if (type === 'log-progress' && msg === _lastLogMsg) return;
+    _lastLogMsg = msg;
     const d = document.createElement('div');
     d.className   = type;
     d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
@@ -1198,12 +1203,15 @@ function handleSuccess(task) {
 function renderResultCard(item) {
     const base     = el.apiBase();
     const fileUrl  = item?.url ?? item?.file ?? '';
-    const fullUrl  = fileUrl.startsWith('http') ? fileUrl : `${base}/${fileUrl.replace(/^\/+/, '')}`;
+    // Append auth token as query param so <audio> and <a download> work with API key
+    const key      = el.apiKey();
+    const authSuffix = key ? `${fileUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(key)}` : '';
+    const fullUrl  = fileUrl.startsWith('http') ? fileUrl + authSuffix : `${base}/${fileUrl.replace(/^\/+/, '')}${authSuffix}`;
 
     const metas    = item?.metas ?? {};
     const prompt   = (item?.prompt || el.prompt.value || '').substring(0, 80);
     const bpm      = metas.bpm          ?? item?.bpm          ?? '—';
-    const key      = metas.keyscale     ?? item?.keyscale      ?? '—';
+    const keyScale = metas.keyscale     ?? item?.keyscale      ?? '—';
     const dur      = metas.duration     ?? item?.duration      ?? '—';
     const genre    = metas.genres       ?? item?.genres        ?? '';
     const timeSig  = metas.timesignature ?? '';
@@ -1223,7 +1231,7 @@ function renderResultCard(item) {
             ${genre ? `<p class="text-[10px] text-accent font-mono mb-1">${escHtml(genre)}</p>` : ''}
             <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-[#555]">
                 <span>BPM <span class="text-[#999]">${bpm}</span></span>
-                <span>Key <span class="text-[#999]">${key}</span></span>
+                <span>Key <span class="text-[#999]">${keyScale}</span></span>
                 <span>Dur <span class="text-[#999]">${dur}s</span></span>
                 ${timeSig ? `<span>Time <span class="text-[#999]">${timeSig}</span></span>` : ''}
                 ${seed ? `<span>Seed <span class="text-[#999]">${seed.split(',')[0]}</span></span>` : ''}

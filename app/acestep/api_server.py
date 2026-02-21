@@ -2720,34 +2720,35 @@ def create_app() -> FastAPI:
                     else:
                         audio_paths = rec.result.get("audio_paths", [])
                         metas = rec.result.get("metas", {}) or {}
-                        result_data = [
-                            {
-                                "file": p, "wave": "", "status": status_int,
-                                "create_time": int(create_time), "env": env,
-                                "prompt": metas.get("caption", ""),
-                                "lyrics": metas.get("lyrics", ""),
-                                "metas": {
-                                    "bpm": metas.get("bpm"),
-                                    "duration": metas.get("duration"),
-                                    "genres": metas.get("genres", ""),
-                                    "keyscale": metas.get("keyscale", ""),
-                                    "timesignature": metas.get("timesignature", ""),
-                                }
-                            }
-                            for p in audio_paths
-                        ] if audio_paths else [{
-                            "file": "", "wave": "", "status": status_int,
-                            "create_time": int(create_time), "env": env,
-                            "prompt": metas.get("caption", ""),
-                            "lyrics": metas.get("lyrics", ""),
+                        # Carry through all metadata from the generation result
+                        shared = {
+                            "wave": "",
+                            "status": status_int,
+                            "create_time": int(create_time),
+                            "env": env,
+                            "prompt": rec.result.get("prompt") or metas.get("prompt") or metas.get("caption", ""),
+                            "lyrics": rec.result.get("lyrics") or metas.get("lyrics", ""),
+                            "seed_value": rec.result.get("seed_value", ""),
+                            "generation_info": rec.result.get("generation_info", ""),
+                            "lm_model": rec.result.get("lm_model", ""),
+                            "dit_model": rec.result.get("dit_model", ""),
+                            "bpm": rec.result.get("bpm") or metas.get("bpm"),
+                            "duration": rec.result.get("duration") or metas.get("duration"),
+                            "genres": rec.result.get("genres") or metas.get("genres", ""),
+                            "keyscale": rec.result.get("keyscale") or metas.get("keyscale", ""),
+                            "timesignature": rec.result.get("timesignature") or metas.get("timesignature", ""),
                             "metas": {
                                 "bpm": metas.get("bpm"),
                                 "duration": metas.get("duration"),
                                 "genres": metas.get("genres", ""),
                                 "keyscale": metas.get("keyscale", ""),
                                 "timesignature": metas.get("timesignature", ""),
-                            }
-                        }]
+                            },
+                        }
+                        result_data = [
+                            {"file": p, **shared}
+                            for p in audio_paths
+                        ] if audio_paths else [{"file": "", **shared}]
                 else:
                     result_data = [{
                         "file": "", "wave": "", "status": status_int,
@@ -3204,8 +3205,32 @@ def create_app() -> FastAPI:
     )
 
     @app.get("/v1/audio")
-    async def get_audio(path: str, request: Request, _: None = Depends(verify_api_key)):
-        """Serve audio file by path."""
+    async def get_audio(
+        path: str,
+        request: Request,
+        token: Optional[str] = None,
+        authorization: Optional[str] = Header(None),
+    ):
+        """Serve audio file by path.
+
+        Accepts auth via:
+          - Authorization header (Bearer <key>)
+          - ?token=<key> query parameter (for <audio> / <a> elements)
+        """
+        # Auth: accept token query-param as fallback for browser elements
+        # that cannot send custom headers (<audio>, <a download>).
+        if _api_key is not None:
+            bearer = None
+            if authorization and authorization.startswith("Bearer "):
+                bearer = authorization[7:]
+            elif authorization:
+                bearer = authorization
+            effective_token = bearer or token
+            if not effective_token:
+                raise HTTPException(status_code=401, detail="Missing Authorization header or token parameter")
+            if effective_token != _api_key:
+                raise HTTPException(status_code=401, detail="Invalid API key")
+
         from fastapi.responses import FileResponse
 
         # Security: Validate path is within allowed directory to prevent path traversal
