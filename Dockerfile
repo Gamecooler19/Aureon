@@ -65,7 +65,7 @@ RUN pip install --no-cache-dir -e ./acestep/third_parts/nano-vllm
 RUN pip install --no-cache-dir \
         safetensors==0.7.0 \
         "transformers>=4.51.0,<4.58.0" \
-        diffusers \
+        "diffusers>=0.32.0" \
         gradio==6.2.0 \
         matplotlib \
         scipy \
@@ -77,7 +77,7 @@ RUN pip install --no-cache-dir \
         "uvicorn[standard]" \
         numba \
         vector-quantize-pytorch \
-        torchao \
+        "torchao>=0.14.1,<0.16.0" \
         toml \
         modelscope \
         peft \
