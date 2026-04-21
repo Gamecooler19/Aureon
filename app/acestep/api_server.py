@@ -3329,7 +3329,7 @@ def create_app() -> FastAPI:
 
     @app.get("/studio")
     async def serve_studio():
-        """Serve the Blu3scr33n - Music web UI."""
+        """Serve the Aureon - Music web UI."""
         from fastapi.responses import FileResponse as FR, JSONResponse
         if os.path.exists(_STUDIO_PATH):
             return FR(_STUDIO_PATH, media_type="text/html")

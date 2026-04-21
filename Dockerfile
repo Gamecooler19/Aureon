@@ -11,7 +11,7 @@
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04 AS base
 
 # System labels
-LABEL org.opencontainers.image.title="Blu3scr33n - Music"
+LABEL org.opencontainers.image.title="Aureon - Music"
 LABEL org.opencontainers.image.description="Production API + Web UI for ACE-Step 1.5 music generation"
 LABEL org.opencontainers.image.url="https://github.com/ace-step/ACE-Step-1.5"
 

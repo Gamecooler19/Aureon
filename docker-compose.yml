@@ -1,5 +1,5 @@
 # =============================================================================
-# Blu3scr33n - Music  ·  ACE-Step 1.5
+# Aureon - Music  ·  ACE-Step 1.5
 # docker compose up -d          →  http://localhost:3297
 # docker compose up -d --build  →  rebuild image first
 #
@@ -16,8 +16,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    image: blu3scr33n-music:latest
-    container_name: blu3scr33n_music
+    image: Aureon-music:latest
+    container_name: Aureon_music
 
     restart: unless-stopped
 
@@ -85,14 +85,14 @@ services:
 # =============================================================================
 volumes:
   checkpoints:
-    name: blu3scr33n_checkpoints
+    name: Aureon_checkpoints
   hf_cache:
-    name: blu3scr33n_hf_cache
+    name: Aureon_hf_cache
   triton_cache:
-    name: blu3scr33n_triton_cache
+    name: Aureon_triton_cache
   inductor_cache:
-    name: blu3scr33n_inductor_cache
+    name: Aureon_inductor_cache
   tmp_cache:
-    name: blu3scr33n_tmp_cache
+    name: Aureon_tmp_cache
   outputs:
-    name: blu3scr33n_outputs
+    name: Aureon_outputs

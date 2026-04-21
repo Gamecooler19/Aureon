@@ -18,7 +18,7 @@
 ### 1. Clone
 
 ```bash
-git clone https://github.com/Blu3scr3en/Aureon.git
+git clone https://github.com/Gamecooler19/Aureon.git
 cd Aureon
 ```
 
@@ -82,8 +82,8 @@ Studio UI: **http://localhost:3297**
 ## Quick Start — Docker (standalone)
 
 ```bash
-docker build -t blu3scr33n-music:latest .
-docker run --gpus all -p 3297:3297 --env-file .env blu3scr33n-music:latest
+docker build -t Aureon-music:latest .
+docker run --gpus all -p 3297:3297 --env-file .env Aureon-music:latest
 ```
 
 ---

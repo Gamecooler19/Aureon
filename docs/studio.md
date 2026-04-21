@@ -21,7 +21,7 @@ Open **http://localhost:3297** in any modern browser.
 | Local only (default) | `python run.py` |
 | LAN / server | `ACESTEP_API_HOST=0.0.0.0 python run.py` |
 | Docker Compose | `docker compose up -d` |
-| Docker standalone | `docker run --gpus all -p 3297:3297 --env-file .env blu3scr33n-music:latest` |
+| Docker standalone | `docker run --gpus all -p 3297:3297 --env-file .env Aureon-music:latest` |
 
 ## URL Routes
 
