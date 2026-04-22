@@ -1,5 +1,5 @@
 <h1 align="center">Aureon — Music</h1>
-<h2 align="center">AI-Powered Music Generation · Built by Aureon By VRIP7</h2>
+<h2 align="center">AI-Powered Music Generation · Built by Pradyumn Tandon</h2>
 <p align="center">
     <a href="https://huggingface.co/ACE-Step/Ace-Step1.5">Models (HuggingFace)</a> |
     <a href="https://modelscope.cn/models/ACE-Step/Ace-Step1.5">ModelScope</a> |
@@ -7,28 +7,6 @@
     <a href="docs/INSTALL.md">Install</a> |
     <a href="docs/studio.md">Studio UI</a>
 </p>
-
----
-
-## About Aureon — Music
-
-**Aureon - Music** is the official AI-powered music channel of **Aureon By VRIP7**.
-
-Aureon By VRIP7 is an Indian student-led alternative to Hack Club — focused on:
-
-- Building real-world tech projects
-- Hackathons
-- AI experimentation
-- Open-source development
-- Technical creativity
-- Digital innovation
-
-This channel represents the sound of builders, coders, and creators shaping the future.
-
-> Music for developers.  
-> Music for engineers.  
-> Music for Indian hackathons.  
-> Music for momentum.
 
 ---
 
